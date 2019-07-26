@@ -1,6 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:formvalidation/src/bloc/productos_bloc.dart';
+import 'package:formvalidation/src/bloc/provider.dart';
+import 'package:image_picker/image_picker.dart';
+
 import 'package:formvalidation/src/models/producto_model.dart';
-import 'package:formvalidation/src/provider/productos_provider.dart';
 import 'package:formvalidation/src/utils/utils.dart' as utils;
 
 class ProductoPage extends StatefulWidget {
@@ -12,12 +17,17 @@ class _ProductoPageState extends State<ProductoPage> {
 
   final formKey           = GlobalKey<FormState>();
   final scaffoldKey       = GlobalKey<ScaffoldState>();
-  final productosProvider = ProductosProvider();
+
+  ProductosBloc productosBloc;
+
   ProductoModel producto  = new ProductoModel();
+  File foto;
   bool _guardando = false;
 
   @override
   Widget build(BuildContext context) {
+    productosBloc = Provider.productosBloc(context);
+
     final ProductoModel prodData = ModalRoute.of(context).settings.arguments;
 
     if(prodData != null){
@@ -31,7 +41,11 @@ class _ProductoPageState extends State<ProductoPage> {
         actions: <Widget>[
           IconButton(
             icon: Icon(Icons.photo_size_select_actual),
-            onPressed: (){},
+            onPressed: _seleccionarFoto,
+          ),
+          IconButton(
+            icon: Icon(Icons.camera_alt),
+            onPressed: _tomarFoto,
           )
         ],
       ),
@@ -42,6 +56,7 @@ class _ProductoPageState extends State<ProductoPage> {
             key: formKey,
             child: Column(
               children: <Widget>[
+                _mostrarFoto(),
                 _crearNombre(),
                 _crearPrecio(),
                 _crearDisponible(),
@@ -113,20 +128,23 @@ class _ProductoPageState extends State<ProductoPage> {
     );
   }
 
-  void _submit(){
+  void _submit() async {
     if(!formKey.currentState.validate()) return;
 
     formKey.currentState.save();
 
 
-    setState(() => _guardando = true);
+    setState((){ _guardando = true;});
     
-
+    if ( foto != null ) {
+      producto.fotoUrl = await productosBloc.subirFoto(foto);
+    }
+     
     if(producto.id == null){
-      productosProvider.crearProducto(producto);
+      productosBloc.agregarProducto(producto);
       mostrarSnackbar('Producto Creado');
     }else{
-      productosProvider.editarProducto(producto);
+      productosBloc.editarProducto(producto);
       mostrarSnackbar('Producto Editado');
     }
 
@@ -142,5 +160,47 @@ class _ProductoPageState extends State<ProductoPage> {
     );
 
     scaffoldKey.currentState.showSnackBar(snackbar);
+  }
+
+  Widget _mostrarFoto(){
+    if(producto.fotoUrl != null){
+      return FadeInImage(
+                  image: NetworkImage(producto.fotoUrl),
+                  placeholder: AssetImage('assets/jar-loading.gif'),
+              );
+    }else{
+      return Image(
+        image: AssetImage(foto?.path ?? 'assets/no-image.png'),
+        height: 300,
+        fit: BoxFit.cover,
+      );
+    }
+  }
+
+  _seleccionarFoto() async {
+
+    _procesarImagen( ImageSource.gallery );
+
+  }
+  
+  
+  _tomarFoto() async {
+
+    _procesarImagen( ImageSource.camera );
+
+  }
+
+  _procesarImagen( ImageSource origen ) async {
+
+    foto = await ImagePicker.pickImage(
+      source: origen
+    );
+
+    if ( foto != null ) {
+      producto.fotoUrl = null;
+    }
+
+    setState(() {});
+
   }
 }

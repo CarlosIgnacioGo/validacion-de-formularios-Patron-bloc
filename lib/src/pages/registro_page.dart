@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:formvalidation/src/bloc/provider.dart';
 import 'package:formvalidation/src/provider/usuario_provider.dart';
-import 'package:formvalidation/src/provider/usuario_provider.dart' as prefix0;
 import 'package:formvalidation/src/utils/utils.dart';
 
-class LoginPage extends StatelessWidget {
+class RegistroPage extends StatelessWidget {
 
   final usuarioProvider = new UsuarioProvider();
 
@@ -98,7 +97,7 @@ class LoginPage extends StatelessWidget {
             ),
             child: Column(
               children: <Widget>[
-                Text('Ingreso', style: TextStyle(fontSize: 20.0)),
+                Text('Crear Cuenta', style: TextStyle(fontSize: 20.0)),
                 SizedBox(height: 60.0,),
                 _crearEmail(bloc),
                 SizedBox(height: 30.0,),
@@ -109,8 +108,8 @@ class LoginPage extends StatelessWidget {
             ),
           ),
           FlatButton(
-            child: Text('Registrarse'),
-            onPressed: ()=> Navigator.pushNamed(context, 'registro'),
+            child: Text('Iniciar Sesión'),
+            onPressed: ()=> Navigator.pushNamed(context, 'login'),
           ),
           SizedBox(height: 100.0)
         ],
@@ -177,16 +176,15 @@ class LoginPage extends StatelessWidget {
           elevation: 0.0,
           color: Colors.deepPurple,
           textColor: Colors.white,
-          onPressed: snapshot.hasData? () => _login(context, bloc) : null,
+          onPressed: snapshot.hasData? () => _register(context, bloc) : null,
         );
       },
     );
   }
 
-  _login(BuildContext context, LoginBloc bloc) async {
-
-    Map info = await usuarioProvider.login(bloc.email, bloc.password);
-
+  _register(BuildContext context, LoginBloc bloc) async {
+    final info = await usuarioProvider.nuevoUsuario(bloc.email, bloc.password);
+    
     if(info['ok']){
       Navigator.pushReplacementNamed(context, 'home');
     }else{
